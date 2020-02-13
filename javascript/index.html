@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Datalumni's coding tests</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.11/vue.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+
+  <div id="app">
+    
+    <transition name="fade">
+      <div v-if="loading" class="loader" name="fade">
+        <div></div>
+      </div>
+    </transition >
+
+		  <h1>List of employees</h1>
+
+      <table class="employeeTable">
+
+        <tr><th>EID</th><th>Full Name</th><th>Email</th><th>Monthly salary<button v-on:click="sortS()" class="sort"><i class="fa fa-sort"></i></button></th><th>Year of Birth</th><th>Actions</th></tr>
+
+        <tr v-for="(item, index) in employee">
+
+          <td>
+            {{ employee[index].id }}
+          </td>
+
+          <td>
+            {{ employee[index].employee_name }}
+          </td>
+
+          <td>
+            {{ email(employee[index].employee_name) }}
+          </td>
+          
+          <td>
+            {{ salary(employee[index].employee_salary) }}
+          </td>
+
+          <td>
+            {{ birth(employee[index].employee_age) }}
+          </td>
+
+          <td>
+            <button v-on:click="duplicate(employee[index].id)" class="duplicate">Duplicate</button>
+            <button v-on:click="deleteEl(employee[index].id,index,$event)" class="delete">Delete</button>
+          </td>
+        </tr>
+      
+        <tr v-if="!isDataEmpty">
+          <td><b>{{ totalEmp() }}</b></td>
+          <td colspan="2"></td>
+          <td><b>{{ totalSalary() }}</b></td>
+          <td colspan="2"></td>
+        </tr>
+
+        <tr v-if="isDataEmpty"><td colspan="6">There is no data</td></tr>
+
+      </table>
+
+	</div>
+ 
+  <script>
+    const vue = new Vue({
+      el: '#app',
+      mounted() {
+
+    },
+
+    data: {
+      loading: true,
+      employee: [],
+      isDataEmpty: false,
+      sortByMostExpensive: false
+    },
+
+    methods: {
+
+      email: function (name) {
+        let nameTab = name.split(" ");
+				return nameTab[0].substr(0,1).toLowerCase() + "." + nameTab[1].toLowerCase() + "@email.com";
+      },
+
+      salary: function (salary) {
+				return (salary/12).toFixed(2);
+      },
+
+      birth: function (age) {
+				let year = new Date().getFullYear();
+        return birthDate = year - parseInt(age);
+      },
+
+      duplicate: function(idEmployee) {
+        let emp = this.employee.filter(e => e.id == idEmployee);
+        this.employee.push(emp[0]);
+      },
+
+      deleteEl: function(idEmployee,index) {
+        this.$delete(this.employee, index);
+        this.checkData();
+      },
+
+      totalEmp: function() {
+        return this.employee.length;
+      },
+
+      totalSalary: function() {
+        let totalSal = 0;
+        for(let emp of this.employee){
+          totalSal+=parseFloat(emp.employee_salary)
+        }
+       return (totalSal/12).toFixed(2)
+      },
+
+      checkData: function() {
+        if(this.employee.length <= 0)
+              this.isDataEmpty = true;
+      },
+
+      sortS: function() {
+        this.employee.sort(vue.sortSalary());
+      },
+
+      sortSalary: function (){ 
+
+        this.sortByMostExpensive = !this.sortByMostExpensive; 
+
+        if(this.sortByMostExpensive) {
+          return function(emp1,emp2){
+              if(emp1.employee_salary/12 < emp2.employee_salary/12)  
+                return 1;  
+              else  
+                return -1;  
+          
+          } 
+        } else {
+          return function(emp1,emp2){
+              if(emp1.employee_salary/12 > emp2.employee_salary/12)  
+                return 1;  
+              else
+                return -1;   
+          } 
+        }
+      },
+
+      /**
+      * Recupere toutes les personnes de l'API
+      */
+      getAllEmployee: function() {
+        axios.get('http://dummy.restapiexample.com/api/v1/employees', {})
+          .then(function (response) {
+
+          // Fin du chargement
+            vue.loading = false;
+            vue.employee = response.data.data;
+
+            vue.checkData();
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+      }
+    },
+
+    beforeMount() {
+      this.getAllEmployee();
+    }
+    })
+  </script>
+</body>
+</html>
